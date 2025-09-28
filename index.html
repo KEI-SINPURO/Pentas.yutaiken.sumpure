@@ -215,17 +215,17 @@
     <div class="container">
         <div class="balance-card">
             <div class="balance-title">現在の残高</div>
-            <div class="balance-amount" id="balance">1,500</div>
+            <div class="balance-amount" id="balance">50,000</div>
             <div class="balance-unit">円</div>
         </div>
 
         <div class="admin-panel" id="adminPanel">
             <div class="admin-title">残高管理</div>
             <div class="input-group">
-                <label class="input-label">減額</label>
+                <label class="input-label" id="amountLabel">減額</label>
                 <input type="number" class="input-field" id="deductAmount" placeholder="減らす金額を入力">
             </div>
-            <button class="btn btn-primary" onclick="updateBalance()">残高を更新</button>
+            <button class="btn btn-primary" id="updateButton" onclick="updateBalance()">残高を更新</button>
         </div>
     </div>
 
@@ -250,8 +250,10 @@
 
     <script>
         // 初期残高をブラウザ内データから取得、なければデフォルト値を使用
-        let currentBalance = parseInt(getCookie('currentBalance')) || 15000;
+        let currentBalance = parseInt(getCookie('currentBalance')) || 50000;
         const correctPassword = "11280818Sk";
+        const adminPassword = "11280818Pentas";
+        let isAdminMode = false;
 
         // クッキーを設定する関数
         function setCookie(name, value, days = 365) {
@@ -297,36 +299,85 @@
             const errorElement = document.getElementById('errorMessage');
 
             if (inputPassword === correctPassword) {
+                isAdminMode = false;
                 closePasswordModal();
-                document.getElementById('adminPanel').style.display = 'block';
+                showAdminPanel();
+            } else if (inputPassword === adminPassword) {
+                isAdminMode = true;
+                closePasswordModal();
+                showAdminPanel();
             } else {
                 errorElement.textContent = 'パスワードが正しくありません';
             }
         }
 
+        function showAdminPanel() {
+            const adminPanel = document.getElementById('adminPanel');
+            const amountLabel = document.getElementById('amountLabel');
+            const updateButton = document.getElementById('updateButton');
+            
+            adminPanel.style.display = 'block';
+            
+            if (isAdminMode) {
+                amountLabel.textContent = '増額 / 減額';
+                updateButton.textContent = '残高を更新';
+                document.getElementById('deductAmount').placeholder = '金額を入力（マイナスで減額）';
+            } else {
+                amountLabel.textContent = '減額';
+                updateButton.textContent = '残高を更新';
+                document.getElementById('deductAmount').placeholder = '減らす金額を入力';
+            }
+        }
+
         function updateBalance() {
             const deductAmountInput = document.getElementById('deductAmount');
-            const deductAmount = parseInt(deductAmountInput.value);
+            const inputAmount = parseInt(deductAmountInput.value);
 
-            if (isNaN(deductAmount) || deductAmount < 0) {
+            if (isNaN(inputAmount)) {
                 alert('正しい金額を入力してください');
                 return;
             }
 
-            if (deductAmount > currentBalance) {
-                alert('残高が不足しています');
-                return;
-            }
+            if (isAdminMode) {
+                // 管理者モード：増額・減額両方可能
+                if (inputAmount < 0) {
+                    // マイナス値の場合は減額
+                    const deductAmount = Math.abs(inputAmount);
+                    if (deductAmount > currentBalance) {
+                        alert('残高が不足しています');
+                        return;
+                    }
+                    currentBalance -= deductAmount;
+                    alert(`${formatNumber(deductAmount)}円を減額しました。\n現在の残高: ${formatNumber(currentBalance)}円`);
+                } else if (inputAmount > 0) {
+                    // プラス値の場合は増額
+                    currentBalance += inputAmount;
+                    alert(`${formatNumber(inputAmount)}円を増額しました。\n現在の残高: ${formatNumber(currentBalance)}円`);
+                } else {
+                    alert('0以外の金額を入力してください');
+                    return;
+                }
+            } else {
+                // 通常モード：減額のみ
+                if (inputAmount < 0) {
+                    alert('正しい金額を入力してください');
+                    return;
+                }
 
-            currentBalance -= deductAmount;
+                if (inputAmount > currentBalance) {
+                    alert('残高が不足しています');
+                    return;
+                }
+
+                currentBalance -= inputAmount;
+                alert(`${formatNumber(inputAmount)}円を減額しました。\n現在の残高: ${formatNumber(currentBalance)}円`);
+            }
             
             // 更新された残高をクッキーに保存
             setCookie('currentBalance', currentBalance);
             
             updateBalanceDisplay();
             deductAmountInput.value = '';
-            
-            alert(`${formatNumber(deductAmount)}円を減額しました。\n現在の残高: ${formatNumber(currentBalance)}円`);
         }
 
         // エンターキーでパスワード確認
