@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>残高確認</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: #333;
+        }
+
+        .container {
+            flex: 1;
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .balance-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .balance-title {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .balance-amount {
+            font-size: 48px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .balance-unit {
+            font-size: 20px;
+            color: #7f8c8d;
+        }
+
+        .staff-section {
+            width: 100%;
+            margin-top: auto;
+            padding: 20px;
+        }
+
+        .staff-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 25px;
+            padding: 12px 24px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            backdrop-filter: blur(10px);
+        }
+
+        .staff-btn:hover {
+            background: rgba(255,255,255,0.3);
+            border-color: rgba(255,255,255,0.5);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            width: 90%;
+            max-width: 350px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #2c3e50;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a67d8;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e0;
+        }
+
+        .error-message {
+            color: #e53e3e;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .admin-panel {
+            display: none;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .admin-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .balance-card {
+                padding: 30px 20px;
+            }
+            
+            .balance-amount {
+                font-size: 36px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="balance-card">
+            <div class="balance-title">現在の残高</div>
+            <div class="balance-amount" id="balance">1,500</div>
+            <div class="balance-unit">円</div>
+        </div>
+
+        <div class="admin-panel" id="adminPanel">
+            <div class="admin-title">残高管理</div>
+            <div class="input-group">
+                <label class="input-label">減額</label>
+                <input type="number" class="input-field" id="deductAmount" placeholder="減らす金額を入力">
+            </div>
+            <button class="btn btn-primary" onclick="updateBalance()">残高を更新</button>
+        </div>
+    </div>
+
+    <div class="staff-section">
+        <button class="staff-btn" onclick="showPasswordModal()">スタッフ専用</button>
+    </div>
+
+    <div class="modal" id="passwordModal">
+        <div class="modal-content">
+            <div class="modal-title">スタッフ認証</div>
+            <div class="input-group">
+                <label class="input-label">パスワード</label>
+                <input type="password" class="input-field" id="passwordInput" placeholder="パスワードを入力">
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="closePasswordModal()">キャンセル</button>
+                <button class="btn btn-primary" onclick="checkPassword()">確認</button>
+            </div>
+            <div class="error-message" id="errorMessage"></div>
+        </div>
+    </div>
+
+    <script>
+        // 初期残高（実際のアプリケーションでは、サーバーやデータベースから取得）
+        let currentBalance = 50000;
+        const correctPassword = "11280818Sk";
+
+        function formatNumber(num) {
+            return num.toLocaleString();
+        }
+
+        function updateBalanceDisplay() {
+            document.getElementById('balance').textContent = formatNumber(currentBalance);
+        }
+
+        function showPasswordModal() {
+            document.getElementById('passwordModal').style.display = 'block';
+            document.getElementById('passwordInput').focus();
+        }
+
+        function closePasswordModal() {
+            document.getElementById('passwordModal').style.display = 'none';
+            document.getElementById('passwordInput').value = '';
+            document.getElementById('errorMessage').textContent = '';
+        }
+
+        function checkPassword() {
+            const inputPassword = document.getElementById('passwordInput').value;
+            const errorElement = document.getElementById('errorMessage');
+
+            if (inputPassword === correctPassword) {
+                closePasswordModal();
+                document.getElementById('adminPanel').style.display = 'block';
+            } else {
+                errorElement.textContent = 'パスワードが正しくありません';
+            }
+        }
+
+        function updateBalance() {
+            const deductAmountInput = document.getElementById('deductAmount');
+            const deductAmount = parseInt(deductAmountInput.value);
+
+            if (isNaN(deductAmount) || deductAmount < 0) {
+                alert('正しい金額を入力してください');
+                return;
+            }
+
+            if (deductAmount > currentBalance) {
+                alert('残高が不足しています');
+                return;
+            }
+
+            currentBalance -= deductAmount;
+            updateBalanceDisplay();
+            deductAmountInput.value = '';
+            
+            alert(`${formatNumber(deductAmount)}円を減額しました。\n現在の残高: ${formatNumber(currentBalance)}円`);
+        }
+
+        // エンターキーでパスワード確認
+        document.getElementById('passwordInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkPassword();
+            }
+        });
+
+        // エンターキーで残高更新
+        document.getElementById('deductAmount').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                updateBalance();
+            }
+        });
+
+        // モーダル外クリックで閉じる
+        document.getElementById('passwordModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePasswordModal();
+            }
+        });
+
+        // 初期表示更新
+        updateBalanceDisplay();
+    </script>
+</body>
+</html>
