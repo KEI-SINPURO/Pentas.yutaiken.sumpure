@@ -249,9 +249,29 @@
     </div>
 
     <script>
-        // 初期残高（実際のアプリケーションでは、サーバーやデータベースから取得）
-        let currentBalance = 1500;
+        // 初期残高をブラウザ内データから取得、なければデフォルト値を使用
+        let currentBalance = parseInt(getCookie('currentBalance')) || 1500;
         const correctPassword = "11280818Sk";
+
+        // クッキーを設定する関数
+        function setCookie(name, value, days = 365) {
+            const date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            const expires = "expires=" + date.toUTCString();
+            document.cookie = name + "=" + value + ";" + expires + ";path=/";
+        }
+
+        // クッキーを取得する関数
+        function getCookie(name) {
+            const nameEQ = name + "=";
+            const ca = document.cookie.split(';');
+            for(let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+            }
+            return null;
+        }
 
         function formatNumber(num) {
             return num.toLocaleString();
@@ -299,6 +319,10 @@
             }
 
             currentBalance -= deductAmount;
+            
+            // 更新された残高をクッキーに保存
+            setCookie('currentBalance', currentBalance);
+            
             updateBalanceDisplay();
             deductAmountInput.value = '';
             
