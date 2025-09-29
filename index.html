@@ -249,8 +249,12 @@
     </div>
 
     <script>
+        // サイト固有の識別子を生成（ドメイン + パス）
+        const siteId = window.location.hostname + window.location.pathname;
+        const balanceKey = 'balance_' + btoa(siteId).replace(/[^a-zA-Z0-9]/g, '');
+        
         // 初期残高をブラウザ内データから取得、なければデフォルト値を使用
-        let currentBalance = parseInt(getCookie('currentBalance')) || 1500;
+        let currentBalance = parseInt(getCookie(balanceKey)) || 1500;
         const correctPassword = "11280818Sk";
         const adminPassword = "11280818Pentas";
         let isAdminMode = false;
@@ -373,8 +377,8 @@
                 alert(`${formatNumber(inputAmount)}円を減額しました。\n現在の残高: ${formatNumber(currentBalance)}円`);
             }
             
-            // 更新された残高をクッキーに保存
-            setCookie('currentBalance', currentBalance);
+            // 更新された残高をサイト固有のキーでクッキーに保存
+            setCookie(balanceKey, currentBalance);
             
             updateBalanceDisplay();
             deductAmountInput.value = '';
